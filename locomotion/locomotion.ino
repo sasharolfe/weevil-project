@@ -15,6 +15,13 @@ Servo right_inner_v;
 static const int linear_displacement = 1;
 static const int anguler_displacement = 1;
 
+// Define constant angles
+static const int leg_lift_height = 30;
+static const int foot_rotation = 75;
+
+// Define constant time needed for movement
+static const int motor_wait = 50;
+
 
 // Define pins
 static const int LEFT_OUTER_PIN  = 27;
@@ -161,36 +168,34 @@ void init_servos() {
 }
 
 void forward(float inches) {
-  for (int i=0; i<linear_displacement; i++) {
-    LEFT_INNER_V.write(-30);
-    RIGHT_INNER_V.write(-30);
-    delay(100);
+  for (int i=0; i < inches/linear_displacement; i++) {
+    left_inner_v.write(-leg_lift_height);
+    right_inner_v.write(-leg_lift_height);
+    delay(motor_wait);
 
-    LEFT_INNER.write(75);
-    RIGHT_INNER.write(75);
-    delay(100);
+    left_inner.write(foot_rotation);
+    right_inner.write(foot_rotation);
+    delay(motor_wait);
 
-    LEFT_INNER_V.write(0);
-    RIGHT_INNER_V(0);
-    delay(100);
+    left_inner_v.write(0);
+    right_inner_v.write(0);
+    delay(motor_wait);
 
-    LEFT_OUTER_V.write(30);
-    RIGHT_OUTER_V.write(30);
-    delay(100);
+    left_outer_v.write(leg_lift_height);
+    right_outer_v.write(leg_lift_height);
+    delay(motor_wait);
 
-    LEFT_INNER.write(-75);
-    RIGHT_INNER.write(-75);
-    delay(100);
+    left_inner.write(-foot_rotation);
+    right_inner.write(-foot_rotation);
+    delay(motor_wait);
 
-    LEFT_OUTER_V.write(0);
-    RIGHT_OUTER_V.write(0);
-    delay(100);
+    left_outer_v.write(0);
+    right_outer_v.write(0);
+    delay(motor_wait);
   }
 }
 
 void loop() {
-  delay(500);
-  right_inner.write(90);
-  delay(500);
-  right_inner.write(0);
+  forward(1);
+  delay(1000*10);
 }
