@@ -10,39 +10,26 @@ Servo left_inner_v;
 Servo right_outer_v;
 Servo right_inner_v;
 
-
-// Define constant speeds
+// Define constant displacement
 static const int linear_displacement = 1;
 static const int anguler_displacement = 1;
 
 // Define constant angles
-static const int leg_lift_height = 30;
-static const int foot_rotation = 75;
+static const int leg_lift_height = 15;
+static const int foot_rotation = 20;
 
 // Define constant time needed for movement
-static const int motor_wait = 50;
-
+static const int motor_wait = 150;
 
 // Define pins
-static const int LEFT_OUTER_PIN  = 27;
+static const int LEFT_OUTER_PIN  = 15;
 static const int LEFT_INNER_PIN  = 13;
-static const int RIGHT_OUTER_PIN = 14;
-static const int RIGHT_INNER_PIN = 15;
-static const int LEFT_OUTER_V_PIN  = 33;
+static const int RIGHT_OUTER_PIN = 27;
+static const int RIGHT_INNER_PIN = 33;
+static const int LEFT_OUTER_V_PIN  = 21;
 static const int LEFT_INNER_V_PIN  = 12;
-static const int RIGHT_OUTER_V_PIN = 21;
-static const int RIGHT_INNER_V_PIN = 32;
-
-// Track current positions
-int left_outer_pos  = 0;
-int left_inner_pos  = 0;
-int right_outer_pos = 0;
-int right_inner_pos = 0;
-
-int left_outer_pos_V  = 0;
-int left_inner_pos_V  = 0;
-int right_outer_pos_V = 0;
-int right_inner_pos_V = 0;
+static const int RIGHT_OUTER_V_PIN = 32;
+static const int RIGHT_INNER_V_PIN = 14;
 
 // Simple servo identifier enum
 enum ServoName {
@@ -56,62 +43,15 @@ enum ServoName {
   RIGHT_INNER_V
 };
 
-// Move function
-void move(ServoName servo_name, int degrees) {
-
-  Servo* servo;
-  int* position;
-
-  switch (servo_name) {
-    case LEFT_OUTER:
-      servo = &left_outer;
-      position = &left_outer_pos;
-      break;
-    case LEFT_INNER:
-      servo = &left_inner;
-      position = &left_inner_pos;
-      break;
-    case RIGHT_OUTER:
-      servo = &right_outer;
-      position = &right_outer_pos;
-      break;
-    case RIGHT_INNER:
-      servo = &right_inner;
-      position = &right_inner_pos;
-      break;
-    
-    case LEFT_OUTER_V:
-      servo = &left_outer_v;
-      position = &left_outer_pos_V;
-      break;
-    case LEFT_INNER_V:
-      servo = &left_inner_v;
-      position = &left_inner_pos_V;
-      break;
-    case RIGHT_OUTER_V:
-      servo = &right_outer_v;
-      position = &right_outer_pos_V;
-      break;
-    case RIGHT_INNER_V:
-      servo = &right_inner;
-      position = &right_inner_pos_V;
-      break;
+// delay that doesn't freeze the computer
+void wait(unsigned int time) {
+  unsigned long target_time = millis() + time;
+  while (millis() < target_time) {
+    delay(1);
   }
-  servo->write(*position);
 }
 
 void setup() {
-
-  // Allow allocation of all timers
-  ESP32PWM::allocateTimer(0);
-  ESP32PWM::allocateTimer(1);
-  ESP32PWM::allocateTimer(2);
-  ESP32PWM::allocateTimer(3);
-  ESP32PWM::allocateTimer(4);
-  ESP32PWM::allocateTimer(5);
-  ESP32PWM::allocateTimer(6);
-  ESP32PWM::allocateTimer(7);
-
   // Set all servos to standard 50Hz
   left_outer.setPeriodHertz(50);
   left_inner.setPeriodHertz(50);
@@ -134,68 +74,104 @@ void setup() {
   right_inner_v.attach(RIGHT_INNER_V_PIN, 500, 2400);
 
   // Initialize all servo positions
-  left_outer.write(left_outer_pos);
-  left_inner.write(left_inner_pos);
-  right_outer.write(right_outer_pos);
-  right_inner.write(right_inner_pos);
+  left_outer.write(90);
+  left_inner.write(90);
+  right_outer.write(90);
+  right_inner.write(90);
 
-  left_outer_v.write(left_outer_pos);
-  left_inner_v.write(left_inner_pos);
-  right_outer_v.write(right_outer_pos);
-  right_inner_v.write(right_inner_pos);
+  left_outer_v.write(90);
+  left_inner_v.write(90);
+  right_outer_v.write(90);
+  right_inner_v.write(90);
 }
 
 // positive is right, negative is left
 void turn(int degrees) {
-  if (degrees > 0) {
-    //turn left
+  float scale = abs(degrees) / 90.0;
+  int inside_rotation  = foot_rotation * (1.0 - scale);
+  int outside_rotation = foot_rotation;
+
+  int left_rotation;
+  int right_rotation;
+
+  if (degrees >= 0) {
+    left_rotation  = inside_rotation;
+    right_rotation = outside_rotation;
   } else {
-    //turn right
+    left_rotation  = outside_rotation;
+    right_rotation = inside_rotation;
+  }
+
+  for (int i=0; i < anguler_displacement; i++) {
+  // One turning step
+    left_inner_v.write(90+leg_lift_height);
+    right_inner_v.write(90-leg_lift_height);
+    delay(motor_wait);
+
+    left_inner.write(90-left_rotation);
+    right_inner.write(90+right_rotation);
+    delay(motor_wait);
+
+    left_inner_v.write(90);
+    right_inner_v.write(90);
+    delay(motor_wait);
+
+    left_outer_v.write(90-leg_lift_height);
+    right_outer_v.write(90+leg_lift_height);
+    delay(motor_wait);
+
+    left_inner.write(90+left_rotation);
+    right_inner.write(90-right_rotation);
+    delay(motor_wait);
+
+    left_outer_v.write(90);
+    right_outer_v.write(90);
+    delay(motor_wait);
   }
 }
 
 void init_servos() {
-  left_outer.write(0);
-  left_inner.write(0);
-  right_outer.write(0);
-  right_inner.write(0);
+  left_outer.write(90);
+  left_inner.write(90);
+  right_outer.write(90);
+  right_inner.write(90);
 
-  left_outer_v.write(0);
-  left_inner_v.write(0);
-  right_outer_v.write(0);
-  right_inner_v.write(0);
-  delay(1000);
+  left_outer_v.write(90);
+  left_inner_v.write(90);
+  right_outer_v.write(90);
+  right_inner_v.write(90);
+  wait(1000);
 }
 
 void forward(float inches) {
   for (int i=0; i < inches/linear_displacement; i++) {
-    left_inner_v.write(-leg_lift_height);
-    right_inner_v.write(-leg_lift_height);
-    delay(motor_wait);
+    left_inner_v.write(90+leg_lift_height);
+    right_inner_v.write(90-leg_lift_height);
+    wait(motor_wait);
 
-    left_inner.write(foot_rotation);
-    right_inner.write(foot_rotation);
-    delay(motor_wait);
+    left_inner.write(90-foot_rotation);
+    right_inner.write(90+foot_rotation);
+    wait(motor_wait);
 
-    left_inner_v.write(0);
-    right_inner_v.write(0);
-    delay(motor_wait);
+    left_inner_v.write(90);
+    right_inner_v.write(90);
+    wait(motor_wait);
 
-    left_outer_v.write(leg_lift_height);
-    right_outer_v.write(leg_lift_height);
-    delay(motor_wait);
+    left_outer_v.write(90-leg_lift_height);
+    right_outer_v.write(90+leg_lift_height);
+    wait(motor_wait);
 
-    left_inner.write(-foot_rotation);
-    right_inner.write(-foot_rotation);
-    delay(motor_wait);
+    left_inner.write(90+foot_rotation);
+    right_inner.write(90-foot_rotation);
+    wait(motor_wait);
 
-    left_outer_v.write(0);
-    right_outer_v.write(0);
-    delay(motor_wait);
+    left_outer_v.write(90);
+    right_outer_v.write(90);
+    wait(motor_wait);
   }
 }
 
 void loop() {
   forward(1);
-  delay(1000*10);
+  wait(1000);
 }
