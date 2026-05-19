@@ -11,12 +11,12 @@ Servo right_outer_v;
 Servo right_inner_v;
 
 // Define constant displacement
-static const int linear_displacement = 1;
-static const int anguler_displacement = 1;
+static const float linear_displacement = 3.175;
+static const float anguler_displacement = 0.075;
 
 // Define constant angles
-static const int leg_lift_height = 15;
-static const int foot_rotation = 20;
+static const int leg_lift_height = 20;
+static const int foot_rotation = 40;
 
 // Define constant time needed for movement
 static const int motor_wait = 150;
@@ -42,14 +42,6 @@ enum ServoName {
   RIGHT_OUTER_V,
   RIGHT_INNER_V
 };
-
-// delay that doesn't freeze the computer
-void wait(unsigned int time) {
-  unsigned long target_time = millis() + time;
-  while (millis() < target_time) {
-    delay(1);
-  }
-}
 
 void setup() {
   // Set all servos to standard 50Hz
@@ -85,6 +77,27 @@ void setup() {
   right_inner_v.write(90);
 }
 
+// delay that doesn't freeze the computer
+void wait(unsigned int time) {
+  unsigned long target_time = millis() + time;
+  while (millis() < target_time) {
+    delay(1);
+  }
+}
+
+void init_servos() {
+  left_outer.write(90);
+  left_inner.write(90);
+  right_outer.write(90);
+  right_inner.write(90);
+
+  left_outer_v.write(90);
+  left_inner_v.write(90);
+  right_outer_v.write(90);
+  right_inner_v.write(90);
+  wait(1000);
+}
+
 // positive is right, negative is left
 void turn(int degrees) {
   float scale = abs(degrees) / 90.0;
@@ -102,10 +115,9 @@ void turn(int degrees) {
     right_rotation = inside_rotation;
   }
 
-  for (int i=0; i < anguler_displacement; i++) {
-  // One turning step
-    left_inner_v.write(90+leg_lift_height);
-    right_inner_v.write(90-leg_lift_height);
+  for (int i=0; i < 1/anguler_displacement; i++) {
+    left_inner_v.write(90-leg_lift_height);
+    right_inner_v.write(90+leg_lift_height);
     delay(motor_wait);
 
     left_inner.write(90-left_rotation);
@@ -130,23 +142,10 @@ void turn(int degrees) {
   }
 }
 
-void init_servos() {
-  left_outer.write(90);
-  left_inner.write(90);
-  right_outer.write(90);
-  right_inner.write(90);
-
-  left_outer_v.write(90);
-  left_inner_v.write(90);
-  right_outer_v.write(90);
-  right_inner_v.write(90);
-  wait(1000);
-}
-
-void forward(float inches) {
-  for (int i=0; i < inches/linear_displacement; i++) {
-    left_inner_v.write(90+leg_lift_height);
-    right_inner_v.write(90-leg_lift_height);
+void forward(float cm) {
+  for (int i=0; i < cm/linear_displacement; i++) {
+    left_inner_v.write(90-leg_lift_height);
+    right_inner_v.write(90+leg_lift_height);
     wait(motor_wait);
 
     left_inner.write(90-foot_rotation);
@@ -157,8 +156,8 @@ void forward(float inches) {
     right_inner_v.write(90);
     wait(motor_wait);
 
-    left_outer_v.write(90-leg_lift_height);
-    right_outer_v.write(90+leg_lift_height);
+    left_outer_v.write(90+leg_lift_height);
+    right_outer_v.write(90-leg_lift_height);
     wait(motor_wait);
 
     left_inner.write(90+foot_rotation);
@@ -172,6 +171,7 @@ void forward(float inches) {
 }
 
 void loop() {
-  forward(1);
-  wait(1000);
+ forward(5); //cm
+ turn(90); //degrees
+ wait(5000);
 }
