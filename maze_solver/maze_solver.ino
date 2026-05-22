@@ -95,9 +95,11 @@ struct SensorReading {
 // ============================================================
 //  WAIT (non-freezing)
 // ============================================================
-void wait(unsigned int ms) {
+void pause(unsigned int ms) {
   unsigned long target = millis() + ms;
-  while (millis() < target) {}
+  while (millis() < target) {
+    delay(1);
+    }
 }
 
 // ============================================================
@@ -108,7 +110,7 @@ void init_servos() {
   right_outer.write(90);   right_inner.write(60);
   left_outer_v.write(90);  left_inner_v.write(90);
   right_outer_v.write(90); right_inner_v.write(90);
-  wait(1000);
+  pause(1000);
 }
 
 // ============================================================
@@ -118,17 +120,21 @@ void forward(float cm) {
   int steps = max(1, (int)(cm / linear_displacement));
   for (int i = 0; i < steps; i++) {
     left_outer_v.write(90 - leg_lift_height);
+    pause(motor_wait/2);
     right_outer_v.write(90 + leg_lift_height);
-    wait(motor_wait);
-    left_outer.write(90 - foot_rotation + left_off_displacement);
-    right_outer.write(90 + foot_rotation + right_off_displacement);
-    wait(motor_wait);
-    left_outer_v.write(90);
-    right_outer_v.write(90);
-    wait(motor_wait);
+    pause(motor_wait/4);
     left_outer.write(90 + foot_rotation + left_off_displacement);
-    right_outer.write(90 - foot_rotation - right_off_displacement);
-    wait(motor_wait);
+    pause(motor_wait/2);
+    right_outer.write(90 - foot_rotation + right_off_displacement);
+    pause(motor_wait/4);
+    left_outer_v.write(90);
+    pause(motor_wait/2);
+    right_outer_v.write(90);
+    pause(motor_wait/4);
+    left_outer.write(90 - foot_rotation + left_off_displacement);
+    pause(motor_wait/2);
+    right_outer.write(90 + foot_rotation - right_off_displacement);
+    pause(motor_wait/4);
   }
 }
 
@@ -154,22 +160,22 @@ void turn(int degrees) {
   for (int i = 0; i < cycles; i++) {
     left_inner_v.write(90 - leg_lift_height);
     right_inner_v.write(90 + leg_lift_height);
-    wait(motor_wait);
+    pause(motor_wait);
     left_inner.write(90 - left_rotation);
     right_inner.write(90 + right_rotation);
-    wait(motor_wait);
+    pause(motor_wait);
     left_inner_v.write(90);
     right_inner_v.write(90);
-    wait(motor_wait);
+    pause(motor_wait);
     left_outer_v.write(90 - leg_lift_height);
     right_outer_v.write(90 + leg_lift_height);
-    wait(motor_wait);
+    pause(motor_wait);
     left_inner.write(90 + left_rotation);
     right_inner.write(90 - right_rotation);
-    wait(motor_wait);
+    pause(motor_wait);
     left_outer_v.write(90);
     right_outer_v.write(90);
-    wait(motor_wait);
+    pause(motor_wait);
   }
 }
 
@@ -187,22 +193,22 @@ void stepBack(int steps) {
   for (int i = 0; i < steps; i++) {
     left_inner_v.write(90 + leg_lift_height);
     right_inner_v.write(90 - leg_lift_height);
-    wait(motor_wait);
+    pause(motor_wait);
     left_inner.write(90 + foot_rotation);
     right_inner.write(90 - foot_rotation);
-    wait(motor_wait);
+    pause(motor_wait);
     left_inner_v.write(90);
     right_inner_v.write(90);
-    wait(motor_wait);
+    pause(motor_wait);
     left_outer_v.write(90 - leg_lift_height);
     right_outer_v.write(90 + leg_lift_height);
-    wait(motor_wait);
+    pause(motor_wait);
     left_inner.write(90 - foot_rotation);
     right_inner.write(90 + foot_rotation);
-    wait(motor_wait);
+    pause(motor_wait);
     left_outer_v.write(90);
     right_outer_v.write(90);
-    wait(motor_wait);
+    pause(motor_wait);
   }
 }
 
@@ -222,7 +228,7 @@ float readSensor(int trigPin, int echoPin) {
   float s[SENSOR_SAMPLES];
   for (int i = 0; i < SENSOR_SAMPLES; i++) {
     s[i] = readSensorRaw(trigPin, echoPin);
-    wait(SENSOR_SAMPLE_DELAY_MS);
+    pause(SENSOR_SAMPLE_DELAY_MS);
   }
   // insertion sort => median
   for (int i = 1; i < SENSOR_SAMPLES; i++) {
@@ -259,7 +265,7 @@ SensorReading readAllSensors() {
 SensorReading readSensorsConfirmed() {
   SensorReading s = readAllSensors();
   for (int i = 1; i < CONFIRM_READS; i++) {
-    wait(SENSOR_SAMPLE_DELAY_MS * SENSOR_SAMPLES);
+    pause(SENSOR_SAMPLE_DELAY_MS * SENSOR_SAMPLES);
     SensorReading s2 = readAllSensors();
     s.wallFront = s.wallFront && s2.wallFront;
     s.wallLeft = s.wallLeft  && s2.wallLeft;
@@ -335,9 +341,9 @@ void attemptRecovery() {
   if (DEBUG_SERIAL) Serial.println("stuck, trying to recover :(");
   static int recoveryCount = 0;
   stepBack(3);
-  wait(200);
+  pause(200);
   turn((recoveryCount++ % 2 == 0) ? 45 : -45);
-  wait(200);
+  pause(200);
   pidIntegral = 0; pidLastError = 0;
   stuckCounter = 0;
 }
@@ -392,7 +398,7 @@ void mazeStep() {
 void setup() {
   if (DEBUG_SERIAL) {
     Serial.begin(115200);
-    while (!Serial) wait(10);
+    while (!Serial) pause(10);
     Serial.println("Maze solver, initialising");
   }
 
@@ -420,14 +426,14 @@ void setup() {
   right_inner_v.attach(RIGHT_INNER_V_PIN, 500, 2400);
 
   init_servos();
-  wait(5000);
+  pause(5000);
 
   if (DEBUG_SERIAL) Serial.println("Ready, beginning maze solve");
 }
 
 bool move = true;
 void loop() {
-  // if (mazeExited) { wait(5000); return; }
+  // if (mazeExited) { pause(5000); return; }
   // mazeStep();
 
   if (Serial.available() > 0) {
@@ -443,7 +449,9 @@ void loop() {
     }
   }
   if (move) {
-    stepOnce();
+    //stepOnce();
+    forward(1);
+    
   } else {
     init_servos();
   }
@@ -451,5 +459,5 @@ void loop() {
   // init_servos();1
   // stepOnce();
   // readAllSensors();
-  // wait(800);
+  // pause(800);
 }
