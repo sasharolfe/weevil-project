@@ -172,6 +172,5 @@ void forward(float cm) {
 
 void loop() {
  forward(5); //cm
- turn(90); //degrees
- wait(5000);
+ wait(50);
 }

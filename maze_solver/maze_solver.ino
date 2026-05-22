@@ -32,6 +32,9 @@ static const int leg_lift_height = 20; // servo offset for leg lift (deg from ce
 static const int foot_rotation = 40; // servo sweep angle (deg from center)
 static const int motor_wait = 150; // ms per servo phase
 
+static const int left_off_displacement = 0;
+static const int right_off_displacement = 0;
+
 // ============================================================
 //  SENSOR CONSTANTS
 // ============================================================
@@ -101,8 +104,8 @@ void wait(unsigned int ms) {
 //  SERVO INIT
 // ============================================================
 void init_servos() {
-  left_outer.write(90);    left_inner.write(90);
-  right_outer.write(90);   right_inner.write(90);
+  left_outer.write(90);    left_inner.write(120);
+  right_outer.write(90);   right_inner.write(60);
   left_outer_v.write(90);  left_inner_v.write(90);
   right_outer_v.write(90); right_inner_v.write(90);
   wait(1000);
@@ -114,23 +117,17 @@ void init_servos() {
 void forward(float cm) {
   int steps = max(1, (int)(cm / linear_displacement));
   for (int i = 0; i < steps; i++) {
-    left_inner_v.write(90 - leg_lift_height);
-    right_inner_v.write(90 + leg_lift_height);
+    left_outer_v.write(90 - leg_lift_height);
+    right_outer_v.write(90 + leg_lift_height);
     wait(motor_wait);
-    left_inner.write(90 - foot_rotation);
-    right_inner.write(90 + foot_rotation);
-    wait(motor_wait);
-    left_inner_v.write(90);
-    right_inner_v.write(90);
-    wait(motor_wait);
-    left_outer_v.write(90 + leg_lift_height);
-    right_outer_v.write(90 - leg_lift_height);
-    wait(motor_wait);
-    left_inner.write(90 + foot_rotation);
-    right_inner.write(90 - foot_rotation);
+    left_outer.write(90 - foot_rotation + left_off_displacement);
+    right_outer.write(90 + foot_rotation + right_off_displacement);
     wait(motor_wait);
     left_outer_v.write(90);
     right_outer_v.write(90);
+    wait(motor_wait);
+    left_outer.write(90 + foot_rotation + left_off_displacement);
+    right_outer.write(90 - foot_rotation - right_off_displacement);
     wait(motor_wait);
   }
 }
@@ -181,26 +178,7 @@ void turn(int degrees) {
 // ============================================================
 void stepOnce() {
   if (DEBUG_SERIAL) Serial.println("Stepping once");
-
-  left_inner_v.write(90 - leg_lift_height);
-  right_inner_v.write(90 + leg_lift_height);
-  wait(motor_wait);
-  left_inner.write(90 - foot_rotation);
-  right_inner.write(90 + foot_rotation);
-  wait(motor_wait);
-  left_inner_v.write(90);
-  right_inner_v.write(90);
-  wait(motor_wait);
-  left_outer_v.write(90 + leg_lift_height);
-  right_outer_v.write(90 - leg_lift_height);
-  wait(motor_wait);
-  left_inner.write(90 + foot_rotation);
-  right_inner.write(90 - foot_rotation);
-  wait(motor_wait);
-  left_outer_v.write(90);
-  right_outer_v.write(90);
-  wait(motor_wait);
-
+  forward(1);
 }
 
 void stepBack(int steps) {
@@ -447,7 +425,7 @@ void setup() {
   if (DEBUG_SERIAL) Serial.println("Ready, beginning maze solve");
 }
 
-bool move = false;
+bool move = true;
 void loop() {
   // if (mazeExited) { wait(5000); return; }
   // mazeStep();
